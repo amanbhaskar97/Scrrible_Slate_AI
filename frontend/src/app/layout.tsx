@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Slate - AI 100XDevs Canvas",
+  title: "SCRIBBLE SLATE",
   description: "Unlock the power of AI-driven drawing",
   icons: {
     icon: [

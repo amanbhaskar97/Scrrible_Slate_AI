@@ -16,7 +16,7 @@ export function WobbleCardDemo() {
           Instant Access, No Sign-Up Required!
           </h2>
           <p className="mt-4 text-left  text-base/6 text-neutral-200">
-          Unlock the full potential of 100Xdev Slate—just open and start creating!
+          Unlock the full potential where Ideas Meet Intelligent Ink!
           </p>
         </div>
         <Image
@@ -36,23 +36,7 @@ export function WobbleCardDemo() {
        Get details information of Image by pressing the Magic Button 
         </p>
       </WobbleCard>
-      <WobbleCard containerClassName="col-span-1 lg:col-span-3 bg-blue-900 min-h-[500px] lg:min-h-[600px] xl:min-h-[300px]">
-        <div className="max-w-sm">
-          <h2 className="max-w-sm md:max-w-lg  text-left text-balance text-base md:text-xl lg:text-3xl font-semibold tracking-[-0.015em] text-white">
-          Stay connected with friends effortlessly!
-          </h2>
-          <p className="mt-4 max-w-[26rem] text-left  text-base/6 text-neutral-200">
-          This exciting feature is coming soon—get ready to collaborate and share like never before!
-          </p>
-        </div>
-        <Image
-          src={canvas1}
-          width={500}
-          height={500}
-          alt="linear demo image"
-          className="absolute -right-10 md:-right-[40%] lg:-right-[20%] -bottom-10 object-contain rounded-2xl"
-        />
-      </WobbleCard>
+      
     </div>
   );
 }

@@ -36,6 +36,10 @@ export async function analyze_image(img: Image, dict_of_vars: Record<string, any
     `Here is a dictionary of user-assigned variables. If the given expression has any of these variables, use its actual value from this dictionary accordingly: ${dict_of_vars_str}. ` +
     `PROPERLY QUOTE THE KEYS AND VALUES IN THE DICTIONARY FOR EASIER PARSING WITH JavaScript's JSON.parse.`;
 
+
+
+
+
   try {
     // Convert image to a base64 string
     const base64Data = img.toDataURL().split(',')[1]; 

@@ -18,7 +18,7 @@ export const GoogleGeminiEffect = ({
   return (
     <div className={cn("relative", className)}>
       <div className="text-sm md:text-5xl font-normal pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-neutral-100 to-neutral-300">
-       <ContainerTextFlip/> – Experience AI on<AuroraTextDemo/> Slate      </div>
+       <ContainerTextFlip/> – Experience AI on<AuroraTextDemo/> Scrrible Slate      </div>
       <p className="text-xs md:text-xl font-normal text-center text-neutral-400 mt-12 max-w-lg mx-auto">
         {description ||
           `​Unlock your creativity with AI—press the button below to unlock the power of AI Canvas.`}

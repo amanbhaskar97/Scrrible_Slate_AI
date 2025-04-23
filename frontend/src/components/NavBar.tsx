@@ -10,13 +10,13 @@ export default function Navbar() {
         {/* Logo and brand */}
         <div className="flex items-center gap-2">
           <Tv className="h-7 w-7" />
-          <span className="font-bold text-xl">Slate</span>
+          <span className="font-bold text-xl">Scrrible Slate</span>
         </div>
         
         {/* Social media icons with links */}
         <div className="flex items-center gap-6">
           <a 
-            href="https://github.com/jeetnik" 
+            href="https://github.com/amanbhaskar97" 
             target="_blank" 
             rel="noopener noreferrer"
             className="hover:text-gray-300 transition-colors"
@@ -24,7 +24,7 @@ export default function Navbar() {
             <IconBrandGithub className="h-7 w-7 cursor-pointer" />
           </a>
           <a 
-            href="https://www.linkedin.com/in/saijeet-nikam" 
+            href="https://www.linkedin.com/in/i-am-amanbhaskar" 
             target="_blank" 
             rel="noopener noreferrer"
             className="hover:text-gray-300 transition-colors"
@@ -32,7 +32,7 @@ export default function Navbar() {
             <IconBrandLinkedin className="h-7 w-7 cursor-pointer" />
           </a>
           <a 
-            href="https://x.com/nikamsaijeet" 
+            href="https://x.com/AmanBhaskar097" 
             target="_blank" 
             rel="noopener noreferrer"
             className="hover:text-gray-300 transition-colors"

@@ -13,7 +13,9 @@ import {
   Minus,
   Hand, 
   Sparkles,
-  X
+  X,
+  Download,
+  Check
 } from "lucide-react";
 
 // Define types for drawing instance methods
@@ -37,6 +39,9 @@ interface Response {
     assign: boolean;
 }
 
+// Add this type for download formats
+type DownloadFormat = 'png' | 'jpg' | 'svg';
+
 export default function Drawing({ roomId }: { roomId: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingInstanceRef = useRef<DrawingInstance | null>(null);
@@ -54,6 +59,9 @@ export default function Drawing({ roomId }: { roomId: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [toolbarCollapsed, setToolbarCollapsed] = useState(false);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   // Check for mobile viewport
   useEffect(() => {
@@ -244,6 +252,63 @@ export default function Drawing({ roomId }: { roomId: string }) {
     setToolbarCollapsed(!toolbarCollapsed);
   };
 
+  const handleDownloadCanvas = async (format: DownloadFormat) => {
+    try {
+      if (!canvasRef.current) {
+        throw new Error('Canvas not found');
+      }
+
+      const canvas = canvasRef.current;
+      let dataUrl: string;
+      let fileName: string;
+      const timestamp = new Date().toISOString().slice(0, 10);
+
+      switch (format) {
+        case 'png':
+          dataUrl = canvas.toDataURL('image/png');
+          fileName = `slate-drawing-${timestamp}.png`;
+          break;
+        case 'jpg':
+          dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          fileName = `slate-drawing-${timestamp}.jpg`;
+          break;
+        case 'svg':
+          // Convert canvas to SVG
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Could not get canvas context');
+          
+          // Create SVG
+          const svgData = `
+            <svg width="${canvas.width}" height="${canvas.height}" xmlns="http://www.w3.org/2000/svg">
+              <image href="${canvas.toDataURL('image/png')}" width="100%" height="100%"/>
+            </svg>
+          `;
+          dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+          fileName = `slate-drawing-${timestamp}.svg`;
+          break;
+        default:
+          throw new Error('Unsupported format');
+      }
+
+      // Create download link
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Show success message
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
+      setShowDownloadOptions(false);
+    } catch (error) {
+      console.error('Download failed:', error);
+      setDownloadError(error instanceof Error ? error.message : 'Download failed');
+      setTimeout(() => setDownloadError(null), 3000);
+    }
+  };
+
   if (!dimensions.width || !dimensions.height) return null;
 
   return (
@@ -307,20 +372,22 @@ export default function Drawing({ roomId }: { roomId: string }) {
           : 'top-3 left-1/2 -translate-x-1/2'}`}
       >
         {isMobile && toolbarCollapsed ? (
-          <button 
+          <button
+          type="submit"
             onClick={toggleToolbar}
             className="bg-purple-600 p-2 rounded-full shadow-md"
           >
-            <Pencil size={18} color="white" />
+            {<Pencil size={18} color="white" />}
           </button>
         ) : (
           <div className="flex gap-1 sm:gap-2 p-2 sm:p-3 bg-neutral-800 rounded-lg relative">
             {isMobile && (
               <button 
+               type="submit"
                 onClick={toggleToolbar}
                 className="absolute -top-2 -right-2 bg-purple-600 p-1 rounded-full shadow-md"
               >
-                <X size={14} color="white" />
+                {<X size={14} color="white" />}
               </button>
             )}
             
@@ -442,6 +509,47 @@ export default function Drawing({ roomId }: { roomId: string }) {
             >
               Clear All
             </button>
+            
+            {/* Download Section */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+                className="w-full bg-purple-600 text-white text-xs py-1.5 rounded hover:bg-purple-700 transition-colors flex items-center justify-center gap-1"
+              >
+                <Download size={14} />
+                Download
+              </button>
+              
+              {/* Download Options Dropdown */}
+              {showDownloadOptions && (
+                <div className="absolute top-full left-0 w-full mt-1 bg-neutral-800 rounded-md shadow-lg overflow-hidden z-50">
+                  {(['png', 'jpg', 'svg'] as DownloadFormat[]).map((format) => (
+                    <button
+                      key={format}
+                      onClick={() => handleDownloadCanvas(format)}
+                      className="w-full px-3 py-2 text-xs text-white hover:bg-purple-600 transition-colors text-left uppercase"
+                    >
+                      {format}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Success Message */}
+            {downloadSuccess && (
+              <div className="absolute bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md flex items-center gap-2 animate-fade-in-out">
+                <Check size={14} />
+                Download Complete
+              </div>
+            )}
+
+            {/* Error Message */}
+            {downloadError && (
+              <div className="absolute bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md animate-fade-in-out">
+                {downloadError}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -620,6 +728,17 @@ export default function Drawing({ roomId }: { roomId: string }) {
             padding-bottom: max(8px, env(safe-area-inset-bottom));
             padding-left: max(8px, env(safe-area-inset-left));
           }
+        }
+
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translateY(10px); }
+          10% { opacity: 1; transform: translateY(0); }
+          90% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .animate-fade-in-out {
+          animation: fadeInOut 3s ease-in-out forwards;
         }
       `}</style>
     </div>
