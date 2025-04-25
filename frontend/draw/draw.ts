@@ -639,18 +639,17 @@ export default function initDraw(canvas: HTMLCanvasElement, roomId: string) {
       }
       
       if (selectedTool === "text") {
+        // Safely remove existing text input if it exists
         if (textInput) {
-            textInput.remove(); // Modern remove() method is forgiving
-            textInput = null;
-        }
-        if (textInput && document.body.contains(textInput)) {
+          if (document.body.contains(textInput)) {
             document.body.removeChild(textInput);
-            textInput = null;
+          }
+          textInput = null;
         }
+        
         // Create text input at click position
         ClearCanvas(existingShape, ctx, canvas);
-        if (textInput) document.body.removeChild(textInput);
-      
+        
         textInput = document.createElement("textarea");
         textInput.style.position = "absolute";
         const canvasRect = canvas.getBoundingClientRect();
@@ -658,24 +657,23 @@ export default function initDraw(canvas: HTMLCanvasElement, roomId: string) {
         const scrollY = window.scrollY || 0;
         const textX = canvasRect.left + StartX + scrollX;
         const textY = canvasRect.top + StartY + scrollY;
-        textInput.style.left = `${textX}px`;  // Changed to pageX
-        textInput.style.top = `${textY}px`;   // Changed to pageY
+        textInput.style.left = `${textX}px`;
+        textInput.style.top = `${textY}px`;
         textInput.style.zIndex = "1000";
-        textInput.style.background = "transpernent"; // Changed to solid background
-        textInput.style.border = "2px solid #4d88ff"; // More visible border
-
+        textInput.style.background = "transpernent";
+        textInput.style.border = "2px solid #4d88ff";
         textInput.style.minWidth = "200px";
         textInput.style.minHeight = "40px";
         textInput.style.padding = "4px";
         textInput.style.fontSize = "22px";
-        textInput.style.transform = "translate(-50%, -50%)";  // Center alignment
-        textInput.style.pointerEvents = "auto";  // Make sure it's interactive
-        textInput.style.color = currentStrokeColor; 
+        textInput.style.transform = "translate(-50%, -50%)";
+        textInput.style.pointerEvents = "auto";
+        textInput.style.color = currentStrokeColor;
 
         document.body.appendChild(textInput);
         setTimeout(() => {
-            if (textInput) textInput.focus();
-          }, 0);
+          if (textInput) textInput.focus();
+        }, 0);
       
         textInput.addEventListener("blur", () => {
           if (textInput && textInput.value.trim() !== "") {
@@ -695,12 +693,13 @@ export default function initDraw(canvas: HTMLCanvasElement, roomId: string) {
             saveShapesToStorage(existingShape, roomId);
             ClearCanvas(existingShape, ctx, canvas);
           }
-          textInput?.remove(); // Safe removal using optional chaining
-          textInput = null;
-          if (textInput && document.body.contains(textInput)) {
-            document.body.removeChild(textInput);
-        }
-          textInput = null;
+          // Safely remove text input on blur
+          if (textInput) {
+            if (document.body.contains(textInput)) {
+              document.body.removeChild(textInput);
+            }
+            textInput = null;
+          }
         });
       }
     }
@@ -1039,7 +1038,7 @@ canvas.addEventListener("pointermove", (e) => {
             ctx.lineWidth = selectedTool === "pencil" ? currentStrokeWidth : 10;
             ctx.stroke();
         } else if (selectedTool === "rect") {
-            let width = tx - StartX; // Use world coordinates
+            let width = tx - StartX;
             let height = ty - StartY;
             
             ctx.strokeStyle = currentStrokeColor;

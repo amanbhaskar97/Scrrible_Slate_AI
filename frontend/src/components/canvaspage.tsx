@@ -42,6 +42,18 @@ interface Response {
 // Add this type for download formats
 type DownloadFormat = 'png' | 'jpg' | 'svg';
 
+// Add proper type declarations for MathJax
+declare global {
+  interface Window {
+    MathJax: {
+      Hub: {
+        Config: (config: any) => void;
+        Queue: (commands: any[]) => void;
+      };
+    };
+  }
+}
+
 export default function Drawing({ roomId }: { roomId: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingInstanceRef = useRef<DrawingInstance | null>(null);
@@ -76,38 +88,49 @@ export default function Drawing({ roomId }: { roomId: string }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // MathJax initialization
+  // MathJax initialization with proper error handling
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_CHTML';
     script.async = true;
+    
+    const handleScriptError = () => {
+      console.error('Failed to load MathJax script');
+      document.head.removeChild(script);
+    };
+    
+    script.onerror = handleScriptError;
     document.head.appendChild(script);
 
     script.onload = () => {
-      //@ts-ignore
+      try {
         window.MathJax.Hub.Config({
-            tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]},
-            showMathMenu: false,
-            messageStyle: "none"
+          tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]},
+          showMathMenu: false,
+          messageStyle: "none"
         });
+      } catch (error) {
+        console.error('Error initializing MathJax:', error);
+      }
     };
 
     return () => {
-        if (document.head.contains(script)) {
-            document.head.removeChild(script);
-        }
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
   }, []);
 
-  // Process LaTeX whenever it changes
+  // Process LaTeX with proper error handling
   useEffect(() => {
-    //@ts-ignore
     if (latexExpression.length > 0 && window.MathJax) {
-        // Give a small delay to ensure DOM is updated
+      try {
         setTimeout(() => {
-          //@ts-ignore
-            window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, latexContainerRef.current]);
+          window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, latexContainerRef.current]);
         }, 100);
+      } catch (error) {
+        console.error('Error processing LaTeX:', error);
+      }
     }
   }, [latexExpression]);
 
@@ -123,24 +146,32 @@ export default function Drawing({ roomId }: { roomId: string }) {
     }
   }, [result]);
   
-  // Enhanced resize handler
+  // Debounced resize handler
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const handleResize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      setDimensions({
-        width: window.innerWidth * dpr,
-        height: window.innerHeight * dpr,
-      });
-      
-      if (canvasRef.current) {
-        canvasRef.current.style.width = `${window.innerWidth}px`;
-        canvasRef.current.style.height = `${window.innerHeight}px`;
-      }
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const dpr = window.devicePixelRatio || 1;
+        setDimensions({
+          width: window.innerWidth * dpr,
+          height: window.innerHeight * dpr,
+        });
+        
+        if (canvasRef.current) {
+          canvasRef.current.style.width = `${window.innerWidth}px`;
+          canvasRef.current.style.height = `${window.innerHeight}px`;
+        }
+      }, 100);
     };
 
     handleResize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   // Initialize drawing instance
@@ -156,7 +187,7 @@ export default function Drawing({ roomId }: { roomId: string }) {
   }, [roomId, dimensions]);
 
   const renderLatexToCanvas = (expression: string, answer: string) => {
-    const latex = `\\(\\LARGE{${expression} = ${answer}}\\)`;
+    const latex = `\\(\\LARGE{\\,${expression}\\,\\,=\\,\\,${answer}\\,}\\)`;
     const newLatex = {
       id: `latex-${Date.now()}`, 
       content: latex
@@ -168,50 +199,55 @@ export default function Drawing({ roomId }: { roomId: string }) {
     setLatexExpression(prev => prev.filter(item => item.id !== id));
   };
 
+  // Improved runRoute with better error handling
   const runRoute = async () => {
     setIsLoading(true);
     const canvas = canvasRef.current;
 
     try {
-      if (canvas) {
-        try {
-          const response = await axios({
-            method: 'post',
-            url: 'http://localhost:3002/calculate',
-            data: {
-              image: canvas.toDataURL('image/png'),
-              dict_of_vars: dictOfVars
-            }
-          });
-
-          const resp = response.data;
-          console.log('Response', resp);
-          
-          if (resp.data && Array.isArray(resp.data)) {
-            // Handle variable assignments
-            resp.data.forEach((data: Response) => {
-              if (data.assign === true) {
-                setDictOfVars(prevDict => ({
-                  ...prevDict,
-                  [data.expr]: data.result
-                }));
-              }
-            });
-            
-            // Process each response item
-            resp.data.forEach((data: Response, index: number) => {
-              setTimeout(() => {
-                setResult({
-                  expression: data.expr,
-                  answer: data.result
-                });
-              }, 500 * (index + 1)); // Stagger responses
-            });
-          }
-        } catch (error) {
-          console.error('Error running calculation:', error);
-        }
+      if (!canvas) {
+        throw new Error('Canvas not found');
       }
+
+      const response = await axios({
+        method: 'post',
+        url: 'http://localhost:3002/calculate',
+        data: {
+          image: canvas.toDataURL('image/png'),
+          dict_of_vars: dictOfVars
+        }
+      });
+
+      const resp = response.data;
+      console.log('Response', resp);
+      
+      if (resp.data && Array.isArray(resp.data)) {
+        // Batch state updates
+        const updates = resp.data.map((data: Response, index: number) => {
+          if (data.assign === true) {
+            setDictOfVars(prevDict => ({
+              ...prevDict,
+              [data.expr]: data.result
+            }));
+          }
+          
+          return new Promise<void>(resolve => {
+            setTimeout(() => {
+              setResult({
+                expression: data.expr,
+                answer: data.result
+              });
+              resolve();
+            }, 500 * (index + 1));
+          });
+        });
+        
+        await Promise.all(updates);
+      }
+    } catch (error) {
+      console.error('Error running calculation:', error);
+      setDownloadError(error instanceof Error ? error.message : 'An error occurred during calculation');
+      setTimeout(() => setDownloadError(null), 3000);
     } finally {
       setIsLoading(false);
     }
@@ -627,7 +663,7 @@ export default function Drawing({ roomId }: { roomId: string }) {
                     <div className="relative z-10">
                       {/* Improved scrolling container with proper max height and overflow handling */}
                       <div
-                        className="latex-content font-serif text-xs leading-tight break-words max-h-[160px] sm:max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+                        className="latex-content font-serif text-xs leading-tight break-words max-h-[160px] sm:max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{ __html: item.content }}
                       />
                     </div>

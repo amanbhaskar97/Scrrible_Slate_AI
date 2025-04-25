@@ -15,7 +15,7 @@ export default function Home() {
         <div className="h-[100vh] w-full bg-black dark:border dark:border-white/[0.1] rounded-md relative pt-30">
           <GoogleGeminiEffect />
         </div>
-<MacbookScroll/>
+          <MacbookScroll/>
         {/* WobbleCardDemo Section */}
         <div className="h-[100vh] w-full bg-black dark:border dark:border-white/[0.1] rounded-md relative pt-20">
           <WobbleCardDemo />

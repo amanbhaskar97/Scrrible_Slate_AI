@@ -34,8 +34,3 @@ process.on('SIGTERM', () => {
     console.log('Server closed.');
   });
 });
-
-// if (ENV === 'dev') {
-//   // For development, you might want to use something like nodemon
-//   // This would be configured in package.json, not directly in the code
-// }
